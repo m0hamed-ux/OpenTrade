@@ -1,0 +1,44 @@
+{
+  "trading": {
+    "symbols": ["EURUSD", "GBPUSD", "USDJPY"],
+    "timeframe": "M15",
+    "candle_count": 100,
+    "cycle_interval_seconds": 60,
+    "trading_sessions": {
+      "london": {"start": "08:00", "end": "16:00"},
+      "newyork": {"start": "13:00", "end": "21:00"},
+      "overlap": {"start": "13:00", "end": "16:00"}
+    }
+  },
+  "risk": {
+    "max_risk_percent": 2.0,
+    "max_daily_loss_percent": 5.0,
+    "max_trades_per_day": 10,
+    "max_open_positions": 3,
+    "default_lot_size": 0.01,
+    "min_rr_ratio": 1.5
+  },
+  "models": {
+    "orchestrator": "gemini-2.5-pro",
+    "market_analyst": "gemini-2.5-pro",
+    "sentiment_agent": "gemini-2.5-flash",
+    "strategy_agent": "gemini-2.5-pro",
+    "risk_manager": "gemini-2.5-flash"
+  },
+  "confidence": {
+    "min_signal_confidence": 0.65,
+    "min_sentiment_weight": 0.2,
+    "max_sentiment_weight": 0.4
+  },
+  "indicators": {
+    "rsi_period": 14,
+    "rsi_overbought": 70,
+    "rsi_oversold": 30,
+    "macd_fast": 12,
+    "macd_slow": 26,
+    "macd_signal": 9,
+    "bb_period": 20,
+    "bb_std": 2,
+    "atr_period": 14
+  }
+}
