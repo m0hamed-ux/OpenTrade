@@ -116,19 +116,19 @@ QLabel#subtitle {
 }
 
 QLabel#metricValue {
-    font-size: 28px;
+    font-size: 22px;
     font-weight: 700;
     color: #ffffff;
 }
 
 QLabel#metricValueGreen {
-    font-size: 28px;
+    font-size: 22px;
     font-weight: 700;
     color: #00d4aa;
 }
 
 QLabel#metricValueRed {
-    font-size: 28px;
+    font-size: 22px;
     font-weight: 700;
     color: #ef4444;
 }
@@ -160,13 +160,13 @@ QLabel#symbolPrice {
 }
 
 QLabel#agentName {
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 600;
     color: #e8eaed;
 }
 
 QLabel#agentStatus {
-    font-size: 11px;
+    font-size: 12px;
     color: #6b7280;
 }
 

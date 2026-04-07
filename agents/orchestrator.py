@@ -279,6 +279,13 @@ class OrchestratorAgent:
 
         session_info = get_session_info()
 
+        # Handle None account_state defensively
+        if account_state is None:
+            account_state = {}
+
+        # Get circuit breaker status safely
+        cb_status = self.circuit_breaker.status if self.circuit_breaker.status else {}
+
         prompt = f"""
 Given the current trading conditions, decide which symbols to analyze:
 
@@ -296,8 +303,8 @@ Market Session:
 - Is Overlap: {session_info.get('is_overlap', False)}
 
 Daily Stats:
-- Trade Count: {self.circuit_breaker.status.get('trade_count', 0)}
-- Max Trades: {self.circuit_breaker.status.get('max_trades', 10)}
+- Trade Count: {cb_status.get('trade_count', 0)}
+- Max Trades: {cb_status.get('max_trades', 10)}
 
 Rules:
 1. Don't analyze symbols we already have positions in (unless evaluating exit)
@@ -367,11 +374,12 @@ Respond with JSON: {{"proceed": boolean, "reason": "explanation", "symbols_to_an
                     logger.info("Running cycle", symbol=symbol)
                     result = await self.run_cycle(symbol)
 
-                    if result.get("execution", {}).get("success"):
+                    execution_result = result.get("execution")
+                    if execution_result and execution_result.get("success"):
                         logger.info(
                             "Trade executed",
                             symbol=symbol,
-                            order_id=result["execution"]["order_id"],
+                            order_id=execution_result["order_id"],
                         )
 
             except Exception as e:

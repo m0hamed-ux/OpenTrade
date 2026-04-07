@@ -27,12 +27,13 @@ class MetricCard(QFrame):
     ):
         super().__init__(parent)
         self.setObjectName("card")
-        self.setMinimumWidth(200)
+        self.setMinimumWidth(160)
         self.setMinimumHeight(100)
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
 
         layout = QVBoxLayout(self)
         layout.setSpacing(8)
-        layout.setContentsMargins(16, 16, 16, 16)
+        layout.setContentsMargins(12, 12, 12, 12)
 
         # Header with title and icon
         header = QHBoxLayout()
@@ -70,7 +71,7 @@ class MetricCard(QFrame):
     def set_value(self, value: str, color: str = "#ffffff"):
         """Update the metric value."""
         self.value_label.setText(value)
-        self.value_label.setStyleSheet(f"font-size: 28px; font-weight: 700; color: {color};")
+        self.value_label.setStyleSheet(f"font-size: 22px; font-weight: 700; color: {color};")
 
     def set_subtitle(self, text: str, color: str = "#9ca3af"):
         """Update the subtitle."""
@@ -107,12 +108,13 @@ class AgentStatusCard(QFrame):
         self.agent_name = agent_name
         self.setObjectName("statusCard")
         self.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.setMinimumWidth(150)
-        self.setMinimumHeight(70)
+        self.setMinimumWidth(170)
+        self.setMinimumHeight(80)
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
 
         layout = QVBoxLayout(self)
-        layout.setSpacing(4)
-        layout.setContentsMargins(12, 12, 12, 12)
+        layout.setSpacing(6)
+        layout.setContentsMargins(14, 14, 14, 14)
 
         # Header with name and status dot
         header = QHBoxLayout()
@@ -167,7 +169,7 @@ class SignalCard(QFrame):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setObjectName("card")
-        self.setMinimumWidth(250)
+        self.setMinimumWidth(280)
 
         layout = QVBoxLayout(self)
         layout.setSpacing(8)
@@ -281,7 +283,7 @@ class CognitionFeed(QFrame):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setObjectName("card")
-        self.setMinimumWidth(300)
+        self.setMinimumWidth(320)
 
         layout = QVBoxLayout(self)
         layout.setSpacing(8)
@@ -319,14 +321,14 @@ class CognitionFeed(QFrame):
         # Timestamp
         time_label = QLabel(timestamp)
         time_label.setObjectName("timestamp")
-        time_label.setMinimumWidth(60)
+        time_label.setMinimumWidth(55)
         entry_layout.addWidget(time_label)
 
         # Agent badge
         agent_label = QLabel(f"[{agent}]")
         color = self._get_agent_color(agent, level)
         agent_label.setStyleSheet(f"color: {color}; font-weight: 600; font-size: 11px;")
-        agent_label.setMinimumWidth(100)
+        agent_label.setMinimumWidth(85)
         entry_layout.addWidget(agent_label)
 
         # Message
@@ -527,7 +529,7 @@ class Dashboard(QWidget):
         matrix_layout.addLayout(agents_grid)
         left_column.addWidget(matrix_frame)
 
-        content_layout.addLayout(left_column, stretch=3)
+        content_layout.addLayout(left_column, stretch=70)
 
         # Right column - signals and logs
         right_column = QVBoxLayout()
@@ -541,7 +543,7 @@ class Dashboard(QWidget):
         self.cognition_feed = CognitionFeed()
         right_column.addWidget(self.cognition_feed, stretch=1)
 
-        content_layout.addLayout(right_column, stretch=1)
+        content_layout.addLayout(right_column, stretch=30)
 
         layout.addWidget(content, stretch=1)
 

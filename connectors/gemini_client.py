@@ -3,7 +3,7 @@
 import asyncio
 from typing import Any
 
-import google.generativeai as genai
+from google import genai
 from tenacity import (
     retry,
     stop_after_attempt,
@@ -36,40 +36,8 @@ class GeminiClient:
             api_key: Google Gemini API key
         """
         self.api_key = api_key
-        genai.configure(api_key=api_key)
-        self._models: dict[str, genai.GenerativeModel] = {}
+        self.client = genai.Client(api_key=api_key)
         self._lock = asyncio.Lock()
-
-    def _get_model(
-        self,
-        model_name: str,
-        system_instruction: str | None = None,
-        tools: list[dict] | None = None,
-    ) -> genai.GenerativeModel:
-        """Get or create a Gemini model instance.
-
-        Args:
-            model_name: Model identifier (e.g., "gemini-2.5-pro")
-            system_instruction: System prompt for the model
-            tools: Function calling tools
-
-        Returns:
-            GenerativeModel instance
-        """
-        cache_key = f"{model_name}:{hash(system_instruction or '')}:{hash(str(tools or []))}"
-
-        if cache_key not in self._models:
-            config = {}
-            if system_instruction:
-                config["system_instruction"] = system_instruction
-
-            model = genai.GenerativeModel(
-                model_name=model_name,
-                **config,
-            )
-            self._models[cache_key] = model
-
-        return self._models[cache_key]
 
     @retry(
         retry=retry_if_exception_type((GeminiRateLimitError,)),
@@ -79,7 +47,7 @@ class GeminiClient:
     async def generate(
         self,
         prompt: str,
-        model_name: str = "gemini-2.5-pro",
+        model_name: str = "gemini-2.0-flash-exp",
         system_instruction: str | None = None,
         temperature: float = 0.7,
         max_tokens: int = 4096,
@@ -98,23 +66,23 @@ class GeminiClient:
         Returns:
             Generated response text
         """
-        model = self._get_model(model_name, system_instruction)
-
-        generation_config = genai.GenerationConfig(
+        config = genai.types.GenerateContentConfig(
             temperature=temperature,
             max_output_tokens=max_tokens,
+            system_instruction=system_instruction,
         )
 
         if response_format == "json":
-            generation_config.response_mime_type = "application/json"
+            config.response_mime_type = "application/json"
 
         try:
             loop = asyncio.get_event_loop()
             response = await loop.run_in_executor(
                 None,
-                lambda: model.generate_content(
-                    prompt,
-                    generation_config=generation_config,
+                lambda: self.client.models.generate_content(
+                    model=model_name,
+                    contents=prompt,
+                    config=config,
                 )
             )
 
@@ -137,7 +105,7 @@ class GeminiClient:
         self,
         prompt: str,
         tools: list[dict[str, Any]],
-        model_name: str = "gemini-2.5-pro",
+        model_name: str = "gemini-2.0-flash-exp",
         system_instruction: str | None = None,
         temperature: float = 0.7,
     ) -> dict[str, Any]:
@@ -153,49 +121,37 @@ class GeminiClient:
         Returns:
             Dict with 'text' and/or 'function_calls'
         """
-        model = self._get_model(model_name, system_instruction)
-
-        generation_config = genai.GenerationConfig(
-            temperature=temperature,
-        )
-
         # Convert tool definitions to Gemini format
         gemini_tools = []
         for tool in tools:
-            gemini_tools.append(genai.protos.Tool(
-                function_declarations=[
-                    genai.protos.FunctionDeclaration(
-                        name=tool["name"],
-                        description=tool["description"],
-                        parameters=genai.protos.Schema(
-                            type=genai.protos.Type.OBJECT,
-                            properties={
-                                k: genai.protos.Schema(
-                                    type=self._map_type(v.get("type", "string")),
-                                    description=v.get("description", ""),
-                                )
-                                for k, v in tool.get("parameters", {}).get("properties", {}).items()
-                            },
-                            required=tool.get("parameters", {}).get("required", []),
-                        ),
-                    )
-                ]
-            ))
+            gemini_tools.append({
+                "function_declarations": [{
+                    "name": tool["name"],
+                    "description": tool["description"],
+                    "parameters": tool.get("parameters", {}),
+                }]
+            })
+
+        config = genai.types.GenerateContentConfig(
+            temperature=temperature,
+            system_instruction=system_instruction,
+            tools=gemini_tools,
+        )
 
         try:
             loop = asyncio.get_event_loop()
             response = await loop.run_in_executor(
                 None,
-                lambda: model.generate_content(
-                    prompt,
-                    generation_config=generation_config,
-                    tools=gemini_tools,
+                lambda: self.client.models.generate_content(
+                    model=model_name,
+                    contents=prompt,
+                    config=config,
                 )
             )
 
             result = {"text": None, "function_calls": []}
 
-            for part in response.parts:
+            for part in response.candidates[0].content.parts:
                 if hasattr(part, "text") and part.text:
                     result["text"] = part.text
                 if hasattr(part, "function_call"):
@@ -212,19 +168,7 @@ class GeminiClient:
                 raise GeminiRateLimitError(str(e))
             raise GeminiError(str(e))
 
-    def _map_type(self, type_str: str) -> int:
-        """Map JSON schema type to Gemini proto type."""
-        type_map = {
-            "string": genai.protos.Type.STRING,
-            "number": genai.protos.Type.NUMBER,
-            "integer": genai.protos.Type.INTEGER,
-            "boolean": genai.protos.Type.BOOLEAN,
-            "array": genai.protos.Type.ARRAY,
-            "object": genai.protos.Type.OBJECT,
-        }
-        return type_map.get(type_str, genai.protos.Type.STRING)
-
-    async def count_tokens(self, text: str, model_name: str = "gemini-2.5-pro") -> int:
+    async def count_tokens(self, text: str, model_name: str = "gemini-2.0-flash-exp") -> int:
         """Count tokens in text.
 
         Args:
@@ -234,12 +178,13 @@ class GeminiClient:
         Returns:
             Token count
         """
-        model = self._get_model(model_name)
-
         loop = asyncio.get_event_loop()
         result = await loop.run_in_executor(
             None,
-            lambda: model.count_tokens(text)
+            lambda: self.client.models.count_tokens(
+                model=model_name,
+                contents=text,
+            )
         )
 
         return result.total_tokens

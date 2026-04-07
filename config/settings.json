@@ -1,6 +1,6 @@
 {
   "trading": {
-    "symbols": ["EURUSD", "GBPUSD", "USDJPY"],
+    "symbols": ["EURUSD", "GBPUSD", "USDJPY", "XAUUSD"],
     "timeframe": "M15",
     "candle_count": 100,
     "cycle_interval_seconds": 60,
@@ -11,22 +11,22 @@
     }
   },
   "risk": {
-    "max_risk_percent": 2.0,
+    "max_risk_percent": 1.0,
     "max_daily_loss_percent": 5.0,
     "max_trades_per_day": 10,
     "max_open_positions": 3,
     "default_lot_size": 0.01,
-    "min_rr_ratio": 1.5
+    "min_rr_ratio": 1.2
   },
   "models": {
-    "orchestrator": "gemini-2.5-pro",
-    "market_analyst": "gemini-2.5-pro",
-    "sentiment_agent": "gemini-2.5-flash",
-    "strategy_agent": "gemini-2.5-pro",
-    "risk_manager": "gemini-2.5-flash"
+    "orchestrator": "gemma-4-26b-a4b-it",
+    "market_analyst": "gemma-4-26b-a4b-it",
+    "sentiment_agent": "gemma-4-26b-a4b-it",
+    "strategy_agent": "gemma-4-26b-a4b-it",
+    "risk_manager": "gemma-4-26b-a4b-it"
   },
   "confidence": {
-    "min_signal_confidence": 0.65,
+    "min_signal_confidence": 0.55,
     "min_sentiment_weight": 0.2,
     "max_sentiment_weight": 0.4
   },
